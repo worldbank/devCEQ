@@ -149,3 +149,7 @@ The second stage is the focus of this guide. In the second stage, the translatio
 4.  Integrating the input page, output page, and simulation logic in a single dashboard
 
 <!-- 5.  Troubleshooting and improving the analysis. -->
+
+## License
+
+This project is licensed under the MIT License together with the [World Bank IGO Rider](WB-IGO-RIDER.md). The Rider is purely procedural: it reserves all privileges and immunities enjoyed by the World Bank, without adding restrictions to the MIT permissions. Please review both files before using, distributing or contributing.
