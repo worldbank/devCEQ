@@ -1,4 +1,7 @@
 url: https://special-adventure-v9417qo.pages.github.io/
 template:
   bootstrap: 5
-
+  bslib:
+    pkgdown-nav-height: 100px
+development:
+  mode: auto
