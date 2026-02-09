@@ -11,6 +11,7 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(devCEQ)
+library(tidyverse)
 ```
 
 
@@ -35,7 +36,7 @@ Useful functions:
 ```
 
 
-```{r}
+```{r, eval = FALSE}
 
 path <- "./data-raw/complex-inputs-structure.xlsx"
 path <- "../ivory_coast/civCEQapp/data-app/civ-inputs-structure.xlsx"
@@ -59,4 +60,3 @@ test_gen_inp_front_tabs_file( "./data-raw/ceq-inputs-idn-2022.xlsx")
 test_gen_inp_front_tabs_file( "./data-raw/simple-inputs-structure.xlsx")
 
 ```
-
