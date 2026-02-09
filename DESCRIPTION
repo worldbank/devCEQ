@@ -65,7 +65,7 @@ Suggests:
     rmarkdown,
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
-URL: https://wbepl.github.io/devCEQ/
+URL: https://wbepl.github.io/devCEQ/, https://special-adventure-v9417qo.pages.github.io/
 Depends:
     R (>= 3.5)
 Config/testthat/edition: 3
