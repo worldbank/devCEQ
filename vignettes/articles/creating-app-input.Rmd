@@ -11,7 +11,7 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(devCEQ)
-library(tidyverse)
+# library(tidyverse)
 ```
 
 
