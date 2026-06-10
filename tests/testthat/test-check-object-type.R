@@ -23,7 +23,7 @@ test_that("check_object_type identifies reactable objects", {
 
 test_that("check_object_type identifies single ggplot object", {
   skip_if_not_installed("ggplot2")
-  library(ggplot2)
+  withr::local_package("ggplot2")
 
   plot1 <- ggplot(mtcars, aes(x = mpg, y = hp)) + geom_point()
   expect_equal(check_object_type(plot1), "ggplot")
@@ -31,7 +31,7 @@ test_that("check_object_type identifies single ggplot object", {
 
 test_that("check_object_type identifies list of ggplot objects", {
   skip_if_not_installed("ggplot2")
-  library(ggplot2)
+  withr::local_package("ggplot2")
 
   plot1 <- ggplot(mtcars, aes(x = mpg, y = hp)) + geom_point()
   plot2 <- ggplot(mtcars, aes(x = wt, y = qsec)) + geom_line()
@@ -43,8 +43,8 @@ test_that("check_object_type identifies list of ggplot objects", {
 test_that("check_object_type identifies single plotly object", {
   skip_if_not_installed("plotly")
   skip_if_not_installed("ggplot2")
-  library(ggplot2)
-  library(plotly)
+  withr::local_package("ggplot2")
+  withr::local_package("plotly")
 
   plot1 <- ggplot(mtcars, aes(x = mpg, y = hp)) + geom_point()
   plotly1 <- ggplotly(plot1)
@@ -54,8 +54,8 @@ test_that("check_object_type identifies single plotly object", {
 test_that("check_object_type identifies list of plotly objects", {
   skip_if_not_installed("plotly")
   skip_if_not_installed("ggplot2")
-  library(ggplot2)
-  library(plotly)
+  withr::local_package("ggplot2")
+  withr::local_package("plotly")
 
   plot1 <- ggplot(mtcars, aes(x = mpg, y = hp)) + geom_point()
   plot2 <- ggplot(mtcars, aes(x = wt, y = qsec)) + geom_line()
@@ -71,7 +71,7 @@ test_that("check_object_type identifies empty list", {
 
 test_that("check_object_type identifies mixed list", {
   skip_if_not_installed("ggplot2")
-  library(ggplot2)
+  withr::local_package("ggplot2")
 
   plot1 <- ggplot(mtcars, aes(x = mpg, y = hp)) + geom_point()
   df <- data.frame(x = 1:5)
@@ -80,10 +80,10 @@ test_that("check_object_type identifies mixed list", {
   expect_equal(check_object_type(mixed_list), "mixed_list")
 })
 
-test_that("check_object_type returns unknown for unrecognized objects", {
-  unknown_obj <- "just a string"
-  expect_equal(check_object_type(unknown_obj), "unknown")
+test_that("check_object_type returns unknown for character input", {
+  expect_equal(check_object_type("just a string"), "unknown")
+})
 
-  unknown_obj2 <- 42
-  expect_equal(check_object_type(unknown_obj2), "unknown")
+test_that("check_object_type returns unknown for numeric input", {
+  expect_equal(check_object_type(42), "unknown")
 })

@@ -1,6 +1,6 @@
 test_that("is_single_output identifies single ggplot", {
   skip_if_not_installed("ggplot2")
-  library(ggplot2)
+  withr::local_package("ggplot2")
 
   plot1 <- ggplot(mtcars, aes(x = mpg, y = hp)) + geom_point()
   expect_true(is_single_output(plot1))
@@ -9,8 +9,8 @@ test_that("is_single_output identifies single ggplot", {
 test_that("is_single_output identifies single plotly", {
   skip_if_not_installed("plotly")
   skip_if_not_installed("ggplot2")
-  library(ggplot2)
-  library(plotly)
+  withr::local_package("ggplot2")
+  withr::local_package("plotly")
 
   plot1 <- ggplot(mtcars, aes(x = mpg, y = hp)) + geom_point()
   plotly1 <- ggplotly(plot1)
@@ -45,7 +45,7 @@ test_that("is_single_output identifies single data.frame", {
 
 test_that("is_single_output returns FALSE for list of outputs", {
   skip_if_not_installed("ggplot2")
-  library(ggplot2)
+  withr::local_package("ggplot2")
 
   plot1 <- ggplot(mtcars, aes(x = mpg, y = hp)) + geom_point()
   plot2 <- ggplot(mtcars, aes(x = wt, y = qsec)) + geom_line()
@@ -54,33 +54,57 @@ test_that("is_single_output returns FALSE for list of outputs", {
   expect_false(is_single_output(plot_list))
 })
 
-test_that("get_single_output_type returns correct types", {
+test_that("is_single_output returns FALSE for a plain unnamed list", {
+  expect_false(is_single_output(list(a = 1, b = 2)))
+})
+
+test_that("get_single_output_type returns 'ggplot' for ggplot object", {
   skip_if_not_installed("ggplot2")
-  skip_if_not_installed("plotly")
-  skip_if_not_installed("flextable")
-  skip_if_not_installed("DT")
-  skip_if_not_installed("reactable")
-  library(ggplot2)
-  library(plotly)
+  withr::local_package("ggplot2")
 
   plot_gg <- ggplot(mtcars, aes(x = mpg, y = hp)) + geom_point()
-  plot_ly <- ggplotly(plot_gg)
-  ft <- flextable::flextable(head(mtcars))
-  dt <- DT::datatable(head(mtcars))
-  rt <- reactable::reactable(head(mtcars))
-  df <- data.frame(x = 1:5)
-
   expect_equal(get_single_output_type(plot_gg), "ggplot")
-  expect_equal(get_single_output_type(plot_ly), "plotly")
+})
+
+test_that("get_single_output_type returns 'plotly' for plotly object", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("plotly")
+  withr::local_package("ggplot2")
+  withr::local_package("plotly")
+
+  plot_gg <- ggplot(mtcars, aes(x = mpg, y = hp)) + geom_point()
+  expect_equal(get_single_output_type(ggplotly(plot_gg)), "plotly")
+})
+
+test_that("get_single_output_type returns 'flextable' for flextable object", {
+  skip_if_not_installed("flextable")
+
+  ft <- flextable::flextable(head(mtcars))
   expect_equal(get_single_output_type(ft), "flextable")
+})
+
+test_that("get_single_output_type returns 'datatables' for DT object", {
+  skip_if_not_installed("DT")
+
+  dt <- DT::datatable(head(mtcars))
   expect_equal(get_single_output_type(dt), "datatables")
+})
+
+test_that("get_single_output_type returns 'reactable' for reactable object", {
+  skip_if_not_installed("reactable")
+
+  rt <- reactable::reactable(head(mtcars))
   expect_equal(get_single_output_type(rt), "reactable")
+})
+
+test_that("get_single_output_type returns 'data.frame' for data frame", {
+  df <- data.frame(x = 1:5)
   expect_equal(get_single_output_type(df), "data.frame")
 })
 
 test_that("flatten_if_single unwraps single-element list with known type", {
   skip_if_not_installed("ggplot2")
-  library(ggplot2)
+  withr::local_package("ggplot2")
 
   plot1 <- ggplot(mtcars, aes(x = mpg, y = hp)) + geom_point()
   wrapped <- list(plot1)
@@ -92,7 +116,7 @@ test_that("flatten_if_single unwraps single-element list with known type", {
 
 test_that("flatten_if_single unwraps deeply nested single-element lists", {
   skip_if_not_installed("ggplot2")
-  library(ggplot2)
+  withr::local_package("ggplot2")
 
   plot1 <- ggplot(mtcars, aes(x = mpg, y = hp)) + geom_point()
   deeply_wrapped <- list(list(list(plot1)))
@@ -103,7 +127,7 @@ test_that("flatten_if_single unwraps deeply nested single-element lists", {
 
 test_that("flatten_if_single returns as-is for multi-element lists", {
   skip_if_not_installed("ggplot2")
-  library(ggplot2)
+  withr::local_package("ggplot2")
 
   plot1 <- ggplot(mtcars, aes(x = mpg, y = hp)) + geom_point()
   plot2 <- ggplot(mtcars, aes(x = wt, y = qsec)) + geom_line()
@@ -116,7 +140,7 @@ test_that("flatten_if_single returns as-is for multi-element lists", {
 
 test_that("flatten_if_single returns single output as-is", {
   skip_if_not_installed("ggplot2")
-  library(ggplot2)
+  withr::local_package("ggplot2")
 
   plot1 <- ggplot(mtcars, aes(x = mpg, y = hp)) + geom_point()
   result <- flatten_if_single(plot1)
@@ -126,7 +150,7 @@ test_that("flatten_if_single returns single output as-is", {
 
 test_that("get_output_structure detects single ggplot", {
   skip_if_not_installed("ggplot2")
-  library(ggplot2)
+  withr::local_package("ggplot2")
 
   plot1 <- ggplot(mtcars, aes(x = mpg, y = hp)) + geom_point()
   result <- get_output_structure(plot1)
@@ -137,7 +161,7 @@ test_that("get_output_structure detects single ggplot", {
 
 test_that("get_output_structure detects list_of_ggplot", {
   skip_if_not_installed("ggplot2")
-  library(ggplot2)
+  withr::local_package("ggplot2")
 
   plot1 <- ggplot(mtcars, aes(x = mpg, y = hp)) + geom_point()
   plot2 <- ggplot(mtcars, aes(x = wt, y = qsec)) + geom_line()
@@ -152,8 +176,8 @@ test_that("get_output_structure detects list_of_ggplot", {
 test_that("get_output_structure detects list_of_plotly", {
   skip_if_not_installed("plotly")
   skip_if_not_installed("ggplot2")
-  library(ggplot2)
-  library(plotly)
+  withr::local_package("ggplot2")
+  withr::local_package("plotly")
 
   plot1 <- ggplot(mtcars, aes(x = mpg, y = hp)) + geom_point()
   plot2 <- ggplot(mtcars, aes(x = wt, y = qsec)) + geom_line()
@@ -167,7 +191,7 @@ test_that("get_output_structure detects list_of_plotly", {
 
 test_that("get_output_structure detects mixed_list", {
   skip_if_not_installed("ggplot2")
-  library(ggplot2)
+  withr::local_package("ggplot2")
 
   plot1 <- ggplot(mtcars, aes(x = mpg, y = hp)) + geom_point()
   df <- data.frame(x = 1:5)
@@ -188,7 +212,7 @@ test_that("get_output_structure detects empty_list", {
 
 test_that("get_output_structure flattens wrapped single outputs", {
   skip_if_not_installed("ggplot2")
-  library(ggplot2)
+  withr::local_package("ggplot2")
 
   plot1 <- ggplot(mtcars, aes(x = mpg, y = hp)) + geom_point()
   wrapped <- list(plot1)
