@@ -156,7 +156,7 @@ f_calc_incidence <- function(dta, force_abs = FALSE, ...) {
     dta <- dta |>
       mutate(
         factor = as.numeric(factor),
-        factor = ifelse(is.na(factor), NA_real, factor)
+        factor = ifelse(is.na(factor), 1, factor)
       )
   }
 
@@ -217,8 +217,15 @@ f_agg_by_decile_by_sim <- function(
   ...
 ) {
   dta_sim |>
-    purrr::map(
+    purrr::imap(
       ~ {
+        policy_name <- .x$policy_name
+        if (is.null(policy_name) || is.na(policy_name) || !nzchar(policy_name)) {
+          policy_name <- paste0("Policy ", .y)
+          cli::cli_warn(
+            "Simulation {.y} has no {.field policy_name}. Using {.val {policy_name}}."
+          )
+        }
         f_agg_by_decile(
           dta = .x$policy_sim_raw,
           var_decile = var_decile,
@@ -227,7 +234,7 @@ f_agg_by_decile_by_sim <- function(
           var_group = var_group,
           ...
         ) |>
-          mutate(sim = .x$policy_name)
+          mutate(sim = policy_name)
       }
     ) |>
     bind_rows()
@@ -315,8 +322,10 @@ f_agg_by_decile_one <- function(
       if (length(missing_var_group) > 0) {
         cli::cli_warn(
           "Grouping variable(s) {.var {missing_var_group}} not found in the data. ",
-          "These variable(s) will be ignored."
+          "Falling back to no grouping."
         )
+        dta <- dta |>
+          mutate(group_var = "No groupping", group_val = "All observations")
       } else {
         var_group <- intersect(var_group, names(dta))
         dta <- dta |>
@@ -513,10 +522,23 @@ f_calc_deciles <- function(
   new_dec_var <- paste0(dec_var, "___decile")
 
   # Check NULL first, then membership
+
+  if (!is.null(wt_var) && !wt_var %in% names(dta)) {
+    cli::cli_warn(
+      "Weight variable {.var {wt_var}} not found in data. Using equal weights."
+    )
+  }
+
   if (is.null(wt_var) || !wt_var %in% names(dta)) {
     dta <- dta |> mutate(wt_temp__ = 1)
   } else {
-    dta <- dta |> mutate(wt_temp__ = !!sym(wt_var))
+    wt_vals <- dta[[wt_var]]
+    if (any(wt_vals <= 0, na.rm = TRUE)) {
+      cli::cli_warn(
+        "Weight variable {.var {wt_var}} contains zero or negative values. This may produce unexpected decile assignments."
+      )
+    }
+    dta <- dta |> mutate(wt_temp__ = ifelse(!!sym(wt_var) <= 0, NA_real_, !!sym(wt_var)))
   }
 
   # Identify which deciles need to be created

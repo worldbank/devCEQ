@@ -1,3 +1,4 @@
+testthat::skip("Dev exploration code - not automated tests")
 pkgload::load_all()
 
 
