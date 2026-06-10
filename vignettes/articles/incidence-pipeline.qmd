@@ -1,0 +1,319 @@
+---
+title: "Incidence Pipeline: From Microdata to Plot"
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+pkgload::load_all(quiet = TRUE)
+library(dplyr)
+```
+
+## From Many Policies to One Comparison
+
+A fiscal microsimulation produces multiple datasets — a baseline and one or more
+reforms. Each scenario yields the same household survey structure but with
+different values (because the policy changed who pays what and who receives
+what). The incidence pipeline takes these separate datasets and produces a
+single plot-ready tibble that enables direct comparison across policies and
+income groups.
+
+### Three Phases
+
+The pipeline operates in three conceptual phases:
+
+| Phase | What happens | Data shape |
+|-------|-------------|------------|
+| **Separate** | Each simulation is processed independently. Deciles are computed per-policy (a reform might change a household's income rank). | List of data frames |
+| **Merge** | All simulations are aggregated into summary statistics and stacked into one tibble. A `sim` column tags which policy each row belongs to. | One long tibble |
+| **Transform** | Incidence measures are calculated, labels applied, and columns renamed — all uniformly across the combined data. | One plot-ready tibble |
+
+### Why This Order
+
+- Deciles **must** be computed per-simulation (a reform changes income rankings)
+- Aggregation is where we lose household-level detail and gain comparability
+- After merging, every operation treats all policies identically — `sim` is
+  just another grouping variable
+
+### Pipeline Diagram
+
+```{mermaid}
+flowchart LR
+  subgraph SEPARATE["Phase 1 · Separate"]
+    direction TB
+    A1[Baseline\npolicy_sim_raw]
+    A2[Reform\npolicy_sim_raw]
+    B[f_calc_deciles_by_sim]
+    A1 --> B
+    A2 --> B
+    B --> C1[Baseline\n+ decile cols]
+    B --> C2[Reform\n+ decile cols]
+  end
+
+  subgraph MERGE["Phase 2 · Merge"]
+    direction TB
+    D[f_agg_by_decile_by_sim]
+    E[One tibble\nsim · decile · var · level\ngroup_var · group_val · pop]
+    D --> E
+  end
+
+  subgraph TRANSFORM["Phase 3 · Transform"]
+    direction TB
+    F[f_calc_incidence]
+    G[f_format_incidence]
+    H[Plot-ready tibble\nSimulation · Decile · Variable\nStatistics · Value · Group]
+    F --> G --> H
+  end
+
+  C1 --> D
+  C2 --> D
+  H --> I[f_plot_gg\nx=Decile · color=Simulation]
+
+  style SEPARATE fill:#e8f4fd,stroke:#2196F3
+  style MERGE fill:#fff3e0,stroke:#FF9800
+  style TRANSFORM fill:#e8f5e9,stroke:#4CAF50
+```
+
+---
+
+## The Input: Simulation Data
+
+The pipeline starts with `dta_sim` — a named list where each element represents
+one policy scenario.
+
+```{r input-structure}
+# Named list of policy simulations
+names(dta_sim)
+
+# Each element: list(policy_sim_raw = <tibble>, policy_name = <character>)
+str(dta_sim[[1]][["policy_name"]])
+str(dta_sim[[2]][["policy_name"]])
+```
+
+Each `policy_sim_raw` is a household-level data frame with income concepts,
+fiscal variables, weights, and grouping variables:
+
+```{r input-columns}
+dta_sim[[1]][["policy_sim_raw"]] |>
+  select(hhid, hhwt, ym, yn, dtx_prog1, dtr_prog1, group_1) |>
+  head(5)
+```
+
+---
+
+## Phase 1: Separate — Assign Deciles
+
+### What `f_calc_deciles()` does (single dataset)
+
+Before seeing the full simulation wrapper, here is how decile assignment works
+on a single data frame. Given income variables and a weight, it creates factor
+columns ranking each household from 1 (poorest) to N (richest):
+
+```{r single-deciles}
+single_df <- dta_sim[[1]][["policy_sim_raw"]]
+
+single_with_dec <- single_df |>
+  f_calc_deciles(dec_var = c("ym", "yn"), wt_var = "hhwt", n_dec = 10)
+
+single_with_dec |>
+  select(hhid, ym, ym___decile, yn, yn___decile) |>
+  head(5)
+```
+
+The `___decile` suffix is the naming convention. Each column is an ordered
+factor (1–10).
+
+### Applying across simulations: `f_calc_deciles_by_sim()`
+
+This wrapper applies `f_calc_deciles()` to each simulation independently. The
+output is the **same list structure** — just with decile columns added:
+
+```{r step1-deciles}
+sim_with_deciles <- dta_sim |>
+  f_calc_deciles_by_sim(
+    dec_var = c("ym", "yn"),
+    wt_var = "hhwt",
+    n_dec = 10
+  )
+
+# Still a list, same length
+length(sim_with_deciles)
+
+# Each element still has policy_sim_raw + policy_name
+names(sim_with_deciles[[1]])
+
+# But now policy_sim_raw has the decile columns
+sim_with_deciles[[2]][["policy_sim_raw"]] |>
+  select(hhid, ym, ym___decile) |>
+  head(3)
+```
+
+Deciles are computed independently per simulation because a policy reform can
+change a household's income and therefore its rank.
+
+---
+
+## Phase 2: Merge — Aggregate and Stack
+
+### What `f_agg_by_decile_one()` does (single variable)
+
+The core aggregation function computes weighted sums of a variable within each
+decile. Here is how it works on a single dataset, one decile variable, and one
+aggregation variable:
+
+```{r single-agg-one}
+single_with_dec |>
+  f_agg_by_decile_one(
+    var_decile = "ym___decile",
+    var_agg = "dtx_prog1",
+    var_group = "group_1",
+    wt_var = "hhwt"
+  ) |>
+  head(8)
+```
+
+Output columns:
+
+- `decile_var` / `decile` — which decile grouping and which decile
+- `var` / `level` — which variable was aggregated and the weighted sum
+- `group_var` / `group_val` — disaggregation dimension and category
+- `pop` / `n` — weighted population and observation count
+- `decile_val` / `decile_n` — total decile income and decile population
+
+### Scaling up: `f_agg_by_decile_by_sim()`
+
+This function loops over all decile variables × aggregation variables × group
+variables for each simulation, then **stacks everything with `bind_rows()`**
+adding a `sim` column. This is the pivot point — list becomes one tibble:
+
+```{r step2-aggregate}
+agg <- sim_with_deciles |>
+  f_agg_by_decile_by_sim(
+    var_decile = c("ym___decile"),
+    var_agg = c("ym", "dtx_prog1"),
+    var_group = c("group_1"),
+    wt_var = "hhwt"
+  )
+
+dim(agg)
+```
+
+```{r step2-structure}
+names(agg)
+```
+
+```{r step2-show}
+agg |>
+  select(sim, decile_var, decile, var, level, group_var, group_val) |>
+  head(10)
+```
+
+Each row is one combination of: **simulation × decile variable × decile ×
+aggregated variable × group**. The `sim` column is what enables comparison.
+
+---
+
+## Phase 3: Transform — Incidence and Formatting
+
+### What `f_calc_incidence()` does
+
+This function joins the variable dictionary to get a sign factor (+1 for
+benefits/income, −1 for taxes), then computes three measures from each row's
+`level` value:
+
+| Measure | Formula | Meaning |
+|---------|---------|---------|
+| **relative** | `level / decile_val` | Share of this decile's total income |
+| **absolute** | `level / total` | Share of all deciles' total for this variable |
+| **level** | `level × factor` | Raw weighted sum (sign-adjusted) |
+
+```{r step3-incidence}
+incid <- agg |>
+  f_calc_incidence(force_abs = TRUE)
+
+incid |>
+  select(sim, decile, var, measure, value) |>
+  head(9)
+```
+
+The data pivots to long format: each original row produces 3 rows (one per
+measure type) with `measure` and `value` columns.
+
+### What `f_format_incidence()` does
+
+Applies the column dictionary to produce presentation-quality output:
+
+1. Joins human-readable labels for variables, measures, and groups
+2. Converts text columns to ordered factors (preserving logical sort order)
+3. Renames columns (`sim` → `Simulation`, `value` → `Value`, etc.)
+
+```{r step4-format}
+formatted <- incid |>
+  f_format_incidence()
+
+names(formatted)
+```
+
+The final structure:
+
+```{r step4-show}
+formatted |>
+  select(Simulation, `Decile by`, Decile, Variable, Statistics, Value) |>
+  head(6)
+```
+
+---
+
+## Plotting: The Comparison
+
+The formatted tibble contains all combinations. The app filters to a specific
+measure + decile variable + variable, then plots with `sim` as the color:
+
+```{r step5-plot, fig.width=7, fig.height=4}
+plot_data <- formatted |>
+  filter(
+    Statistics == levels(Statistics)[1],
+    `Decile by` == levels(`Decile by`)[1],
+    Variable == levels(Variable)[1]
+  )
+
+f_plot_gg(
+  plot_data,
+  x_var = "Decile",
+  y_var = "Value",
+  color_var = "Simulation",
+  type = "bar",
+  title = "Comparing policies by decile"
+)
+```
+
+The `Simulation` column distinguishes policies — each gets its own color in the
+grouped bar chart.
+
+---
+
+## Complete Pipeline (One Call)
+ 
+In practice, the entire pipeline from raw simulation list to plot-ready data is:
+
+```{r full-pipeline, eval=FALSE}
+plot_ready <- dta_sim |>
+  f_calc_deciles_by_sim(dec_var = c("ym", "yn"), wt_var = "hhwt", n_dec = 10) |>
+  f_agg_by_decile_by_sim(
+    var_decile = c("ym___decile", "yn___decile"),
+    var_agg = c("ym", "dtx_prog1", "dtx_prog2", "dtr_prog1"),
+    var_group = c("group_1", "group_2"),
+    wt_var = "hhwt"
+  ) |>
+  f_calc_incidence(force_abs = TRUE) |>
+  f_format_incidence()
+```
+
+The Shiny app then progressively filters this dataset by user selections
+(decile variable, measure type, grouping, group values) before passing each
+subset to `f_plot_gg()`.
