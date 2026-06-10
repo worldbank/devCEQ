@@ -44,12 +44,20 @@ m_pov_srv <-
       ever_rendered <- reactiveVal(FALSE)
       output$incidences_ui <- renderUI({
         req(isolate(!ever_rendered()))
-        validate(need(isTruthy(sim_res()), "Press 'Run' to execute simulaitons."))
+        validate(need(
+          isTruthy(sim_res()),
+          "Press 'Run' to execute simulaitons."
+        ))
         page_ui(ns(NULL), pltby_skip = pltby_skip)
       })
 
       # Step 2.a Title
-      ptitle <- m_input_srv("title", "title", title = reactive(page_title), choices = reactive(page_title))
+      ptitle <- m_input_srv(
+        "title",
+        "title",
+        title = reactive(page_title),
+        choices = reactive(page_title)
+      )
 
       # Step 2.b Poverty line selection
       pl_choice <- m_input_srv("pl_choice", pl_type, pl_title, pl_choices)
@@ -81,7 +89,8 @@ m_pov_srv <-
           ),
         )
         req(sim_res())
-        sim_res() |> keep(~ !is.null(.x$policy_sim_raw) && nrow(.x$policy_sim_raw) > 0)
+        sim_res() |>
+          keep(~ !is.null(.x$policy_sim_raw) && nrow(.x$policy_sim_raw) > 0)
       })
 
       # Estimates all poverty measures
@@ -114,10 +123,14 @@ m_pov_srv <-
       dta_calc_fig <- reactive({
         req(dta_calc())
         req(grpby())
+        # browser()
         dta_calc() |>
-          filter(
-            if_any(f_get_colname("measure")) %in%
-              get_measure_nm(plt_options)$measure_title
+          dplyr::filter(
+            if_any(
+              f_get_colname("measure"),
+              ~ . %in%
+                get_measure_nm(plt_options)$measure_title
+            )
           )
       })
 
@@ -269,13 +282,13 @@ f_pov_ui_linear <- function(id, add_pl = TRUE, pltby_skip = TRUE) {
   )
   input_elements <- input_elements[!sapply(input_elements, is.null)]
   if (length(input_elements) == 2) {
-    col_widths  <- c(5, 7)
+    col_widths <- c(5, 7)
   } else if (length(input_elements) == 3) {
-    col_widths  <- c(3, 4, 5)
+    col_widths <- c(3, 4, 5)
   } else if (length(input_elements) == 1) {
-    col_widths  <- c(12)
+    col_widths <- c(12)
   } else {
-    col_widths  <- NULL
+    col_widths <- NULL
   }
 
   # Drop NULL from list
