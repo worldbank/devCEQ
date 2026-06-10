@@ -491,21 +491,74 @@ f_agg_by_decile <- function(
 #' @param dec_var Character vector of variable names to calculate quantiles for
 #' @param wt_var Character name of the weight variable. If NULL or not found in data, equal weights are used
 #' @param n_dec Number of quantiles to create (default: 10 for deciles)
+#' @param fixed_dec_var Character vector of variable names (base names, without
+#'   the `___decile` suffix) whose decile assignment is already present in `dta`
+#'   and should **not** be recomputed. Use this to preserve a baseline decile
+#'   allocation across reform simulations. The corresponding `{var}___decile`
+#'   column must already exist in `dta` as a factor; if missing, an error is
+#'   raised. If a variable appears in both `dec_var` and `fixed_dec_var`,
+#'   `fixed_dec_var` takes precedence.
 #'
 #' @return The input data frame with additional columns for each variable's quantiles,
-#'   named as `{var}_decile_{n_dec}`. Existing decile variables are not recalculated.
+#'   named as `{var}___decile`. Variables listed in `fixed_dec_var` are left untouched.
 #'
 #' @export
 f_calc_deciles <- function(
   dta,
   dec_var = NULL,
   wt_var = NULL,
-  n_dec = 10
+  n_dec = 10,
+  fixed_dec_var = NULL
 ) {
   # Validate inputs
   if (is.null(dec_var) || length(dec_var) == 0) {
     cli::cli_warn("{.arg dec_var} must be a non-empty character vector")
     return(dta)
+  }
+
+  # Normalise fixed_dec_var: strip ___decile suffix if user included it
+  if (!is.null(fixed_dec_var)) {
+    fixed_dec_var <- sub("___decile$", "", fixed_dec_var)
+
+    # Variables in both dec_var and fixed_dec_var: fixed wins
+    overlap <- intersect(dec_var, fixed_dec_var)
+    if (length(overlap) > 0) {
+      cli::cli_inform(
+        "Variable{?s} {.var {overlap}} listed in both {.arg dec_var} and \
+        {.arg fixed_dec_var}. Treating as fixed; deciles will not be recomputed."
+      )
+    }
+
+    # Validate: fixed columns must already exist in data
+    fixed_col_names <- paste0(fixed_dec_var, "___decile")
+    missing_fixed <- fixed_col_names[!fixed_col_names %in% names(dta)]
+    if (length(missing_fixed) > 0) {
+      cli::cli_abort(c(
+        "Fixed decile column{?s} not found in data: {.var {missing_fixed}}",
+        "i" = "Pre-compute baseline deciles and join {.var {missing_fixed}} onto \
+        each simulation dataset before calling {.fn f_calc_deciles} with \
+        {.arg fixed_dec_var}."
+      ))
+    }
+
+    # Coerce non-factor fixed columns to factor with a warning
+    non_factor <- fixed_col_names[!vapply(dta[fixed_col_names], is.factor, logical(1))]
+    if (length(non_factor) > 0) {
+      cli::cli_warn(
+        "Fixed decile column{?s} {.var {non_factor}} {?is/are} not a factor. \
+        Coercing to ordered factor."
+      )
+      dta <- dta |>
+        mutate(across(all_of(non_factor), ~ factor(., levels = sort(unique(.)))))
+    }
+
+    # Remove fixed vars from the to-compute list
+    dec_var <- setdiff(dec_var, fixed_dec_var)
+
+    # If nothing left to compute, return early
+    if (length(dec_var) == 0) {
+      return(dta)
+    }
   }
 
   missing_vars <- dec_var[!dec_var %in% names(dta)]
@@ -520,8 +573,6 @@ f_calc_deciles <- function(
   }
 
   new_dec_var <- paste0(dec_var, "___decile")
-
-  # Check NULL first, then membership
 
   if (!is.null(wt_var) && !wt_var %in% names(dta)) {
     cli::cli_warn(
@@ -541,19 +592,11 @@ f_calc_deciles <- function(
     dta <- dta |> mutate(wt_temp__ = ifelse(!!sym(wt_var) <= 0, NA_real_, !!sym(wt_var)))
   }
 
-  # Identify which deciles need to be created
-  on_dec_var <- dec_var#[!(new_dec_var %in% names(dta))]
-
-  # if (length(on_dec_var) == 0) {
-  #   cli::cli_inform("All requested decile variables already exist")
-  #   return(dta)
-  # }
-
   dta <-
     dta |>
     select(-any_of(new_dec_var)) |>
     calc_deciles(
-      dec_var = on_dec_var,
+      dec_var = dec_var,
       wt_var = "wt_temp__",
       n_dec = n_dec,
       dec_var_name = str_c("{.col}___decile")
@@ -572,6 +615,11 @@ f_calc_deciles <- function(
 #' @param wt_var Character name of the weight variable. If NULL or not found in data,
 #'   equal weights are used
 #' @param n_dec Number of quantiles to create (default: 10 for deciles)
+#' @param fixed_dec_var Character vector of variable base names whose
+#'   `{var}___decile` columns are already present in each simulation's
+#'   `policy_sim_raw` and must not be recomputed. The fixed columns must have
+#'   been joined onto each simulation's microdata before calling this function.
+#'   See `f_calc_deciles()` for details.
 #' @param ... Additional arguments (currently unused)
 #'
 #' @return A list with the same structure as `dta_sim`, where each simulation's
@@ -583,6 +631,7 @@ f_calc_deciles_by_sim <- function(
   dec_var,
   wt_var = NULL,
   n_dec = 10,
+  fixed_dec_var = NULL,
   ...
 ) {
   dta_sim |>
@@ -593,7 +642,8 @@ f_calc_deciles_by_sim <- function(
           f_calc_deciles(
             dec_var = dec_var,
             wt_var = wt_var,
-            n_dec = n_dec
+            n_dec = n_dec,
+            fixed_dec_var = fixed_dec_var
           )
         .x
       }
