@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "skills": {
+    "cli": {
+      "source": "posit-dev/skills",
+      "sourceType": "github",
+      "skillPath": "r-lib/cli/SKILL.md",
+      "computedHash": "f95bb1c55a65d2cd5e832680dc33d3e9213e2964cd02d8d41b00e84b9b039ef6"
+    },
+    "cran-extrachecks": {
+      "source": "posit-dev/skills",
+      "sourceType": "github",
+      "skillPath": "r-lib/cran-extrachecks/SKILL.md",
+      "computedHash": "648f4fbc098a3ee8d8812e07e7898fa831fa03148f15d32ef21c33b776f458f3"
+    },
+    "critical-code-reviewer": {
+      "source": "posit-dev/skills",
+      "sourceType": "github",
+      "skillPath": "posit-dev/critical-code-reviewer/SKILL.md",
+      "computedHash": "30343f8224a778337b02a929900ec08d79ae9faba296456252820681fead990e"
+    },
+    "describe-design": {
+      "source": "posit-dev/skills",
+      "sourceType": "github",
+      "skillPath": "posit-dev/describe-design/SKILL.md",
+      "computedHash": "fd719e142619babf618f633270db56c9d9463272584fc025c01b50a597f09d07"
+    },
+    "implement": {
+      "source": "posit-dev/skills",
+      "sourceType": "github",
+      "skillPath": "posit-dev/implement/SKILL.md",
+      "computedHash": "f7e06c5814e3970b9af5b211a758252695cfd7e4e742a031c2cccd03053bd48b"
+    },
+    "mirai": {
+      "source": "posit-dev/skills",
+      "sourceType": "github",
+      "skillPath": "r-lib/mirai/SKILL.md",
+      "computedHash": "8b1a3b5b69d57d71fb088b2cb934624fb58e2c32b59903b6d7302c8341aa6208"
+    },
+    "r-cli-app": {
+      "source": "posit-dev/skills",
+      "sourceType": "github",
+      "skillPath": "r-lib/r-cli-app/SKILL.md",
+      "computedHash": "4c87266e4a41c3523fa0284a6573a4dc0dccaeb710aa229cbbe8c53061eeebc0"
+    },
+    "r-package-development": {
+      "source": "posit-dev/skills",
+      "sourceType": "github",
+      "skillPath": "r-lib/r-package-development/SKILL.md",
+      "computedHash": "34d8e5170b937719c46e1c44d7ede62aa3f8833077bd6ca6c51baa205cd30aab"
+    },
+    "review-testing": {
+      "source": "posit-dev/skills",
+      "sourceType": "github",
+      "skillPath": "posit-dev/review-testing/SKILL.md",
+      "computedHash": "ae28e0ce480a9a0260dbebdcbb8aa69d1daa6e048a90865973ec5ccb79c6af82"
+    },
+    "shiny-bslib": {
+      "source": "posit-dev/skills",
+      "sourceType": "github",
+      "skillPath": "shiny/shiny-bslib/SKILL.md",
+      "computedHash": "73493840a160b15539d9abd368ad640eb5404f880bbb4235cad0217151ea81a1"
+    },
+    "shiny-bslib-theming": {
+      "source": "posit-dev/skills",
+      "sourceType": "github",
+      "skillPath": "shiny/shiny-bslib-theming/SKILL.md",
+      "computedHash": "69da49fad9fa1f75dcffeaa6d3d0e2742ce86f269a0921b0464d1e6a5f9d576c"
+    },
+    "testing-r-packages": {
+      "source": "posit-dev/skills",
+      "sourceType": "github",
+      "skillPath": "r-lib/testing-r-packages/SKILL.md",
+      "computedHash": "889aca4e9fd940196766424de1e3094da9c10a1936368b8a78969276d44c222d"
+    },
+    "working-on": {
+      "source": "posit-dev/skills",
+      "sourceType": "github",
+      "skillPath": "posit-dev/working-on/SKILL.md",
+      "computedHash": "5ecc80b3eddbde4afb5cdd5e6c2beb18ed9307d257daea58e8848741ffda9916"
+    }
+  }
+}
