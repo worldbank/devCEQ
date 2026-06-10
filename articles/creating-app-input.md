@@ -1,6 +1,7 @@
 # Creating app's input page
 
 ``` r
+
 library(devCEQ)
 # library(tidyverse)
 ```
@@ -8,6 +9,7 @@ library(devCEQ)
 Useful functions:
 
 ``` r
+
 ?load_input_xlsx
 #> No documentation for 'load_input_xlsx' in specified packages and libraries:
 #> you could try '??load_input_xlsx'
@@ -29,6 +31,7 @@ Useful functions:
 ```
 
 ``` r
+
 ?load_inputtabs_xlsx
 #> No documentation for 'load_inputtabs_xlsx' in specified packages and libraries:
 #> you could try '??load_inputtabs_xlsx'
@@ -47,6 +50,7 @@ Useful functions:
 ```
 
 ``` r
+
 
 path <- "./data-raw/complex-inputs-structure.xlsx"
 path <- "../ivory_coast/civCEQapp/data-app/civ-inputs-structure.xlsx"

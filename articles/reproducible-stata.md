@@ -1,6 +1,7 @@
 # Making a reproducible simulation in Stata
 
 ``` r
+
 library(devCEQ)
 ```
 

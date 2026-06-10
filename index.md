@@ -65,6 +65,7 @@ This is very important as this package is the backbone of
 microsimulation analysis. To install it, run in the console:
 
 ``` r
+
 if (!require("remotes")) {
   install.packages("remotes")
 }
@@ -78,6 +79,7 @@ Now, to launch an exemplary microsimulation app, run the following
 command in the R console:
 
 ``` r
+
 library(devCEQ)
 CEQ_run_example()
 ```
@@ -92,6 +94,7 @@ navigating to the folder, where it is located.
   app is, type in the R console.
 
 ``` r
+
 system.file("examples", "ceq_example_simple", package = "devCEQ") |> 
   utils::browseURL()
 ```
@@ -107,6 +110,7 @@ run the code below.
   create all folders automatically.
 
 ``` r
+
 library(devCEQ)
 create_microsim("./microsim_simple_example")
 ```
